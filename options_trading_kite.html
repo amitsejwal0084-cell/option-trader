@@ -407,7 +407,10 @@ function showModal() {
   const saved = getSaved();
   if (saved.apiKey)    document.getElementById('m-apikey').value = saved.apiKey;
   if (saved.apiSecret) document.getElementById('m-secret').value = saved.apiSecret;
-  if (saved.token)     document.getElementById('m-token').value  = saved.token;
+  // NOTE: m-token (Access Token) is intentionally NOT restored —
+  // it expires daily, so reusing a stale value causes silent failures.
+  document.getElementById('m-token').value = '';
+  document.getElementById('m-reqtoken').value = '';
   updateLoginLink();
 }
 
@@ -1174,14 +1177,23 @@ setInterval(updateClock, 1000);
 // Auto-refresh every 60s if connected
 setInterval(()=>{ if(apiKey && accessToken) fetchAll(); }, 60000);
 
-// Check for saved credentials
+// Check for saved credentials — try auto-reconnect, but show modal if it fails
 const saved = getSaved();
 if (saved.apiKey && saved.token) {
   apiKey = saved.apiKey;
   accessToken = saved.token;
   document.getElementById('setup-modal').style.display = 'none';
   setBadge('loading', '⏳ Reconnecting...');
-  fetchAll();
+  fetchAll().then(()=>{
+    if (!connected) {
+      // stale token — clear it and prompt for fresh login
+      accessToken = '';
+      sessionStorage.setItem('kite_creds', JSON.stringify({ apiKey: saved.apiKey, apiSecret: saved.apiSecret||'' }));
+      showModal();
+    }
+  });
+} else {
+  showModal();
 }
 </script>
 </body>
