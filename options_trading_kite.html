@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ऑप्शन ट्रेडिंग — Zerodha Kite Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070d14;--surface:#0d1a26;--surface2:#112236;--border:#1a3350;--accent:#00d4ff;--accent2:#00ff88;--warn:#ffb800;--text:#e2eaf4;--muted:#5a7a99;--call:#00ff88;--put:#ff4060;--glow:0 0 20px rgba(0,212,255,0.3)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans Devanagari','Rajdhani',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.container{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:16px}
+
+/* ── Setup Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:28px;max-width:520px;width:100%;box-shadow:var(--glow)}
+.modal h2{font-size:20px;color:var(--accent);margin-bottom:6px;font-weight:700}
+.modal .sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.step-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.step-box h3{font-size:12px;font-weight:700;color:var(--warn);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+.step-box p{font-size:12px;color:var(--muted);line-height:1.7}
+.step-box code{background:#0a1929;color:var(--accent);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px}
+.copy-link{display:inline-block;margin-top:6px;font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;font-family:'JetBrains Mono',monospace;word-break:break-all}
+mlabel{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600}
+.minput{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;margin-bottom:10px;transition:border-color .2s}
+.minput:focus{border-color:var(--accent)}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.connect-btn{width:100%;padding:14px;background:linear-gradient(135deg,#0088ff,#00d4ff);border:none;border-radius:10px;font-family:'Noto Sans Devanagari',sans-serif;font-size:16px;font-weight:700;color:#000;cursor:pointer;margin-top:6px;transition:transform .15s,box-shadow .15s}
+.connect-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,0.5)}
+.gen-token-btn{display:block;width:100%;padding:10px;background:rgba(255,184,0,0.1);border:1px solid var(--warn);border-radius:8px;color:var(--warn);font-size:13px;font-weight:700;cursor:pointer;text-align:center;margin-bottom:10px;text-decoration:none}
+.gen-token-btn:hover{background:rgba(255,184,0,0.2)}
+.modal-err{font-size:12px;color:var(--put);margin-top:8px;display:none}
+
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--glow);flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo h1{font-size:19px;font-weight:700;color:var(--accent);letter-spacing:1px}
+.logo span{font-size:10px;color:var(--muted);display:block}
+.hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-live{background:rgba(0,255,136,0.1);border:1px solid var(--call);color:var(--call)}
+.badge-warn{background:rgba(255,184,0,0.1);border:1px solid var(--warn);color:var(--warn)}
+.badge-err{background:rgba(255,64,96,0.1);border:1px solid var(--put);color:var(--put)}
+.dot{width:7px;height:7px;border-radius:50%;animation:pulse 1.5s infinite}
+.dot-g{background:var(--call)}.dot-y{background:var(--warn)}.dot-r{background:var(--put)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.time-display{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.settings-btn{padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s}
+.settings-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Index Tabs ── */
+.index-tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{flex:1;padding:12px;border-radius:10px;border:2px solid var(--border);background:var(--surface);cursor:pointer;text-align:center;transition:all .2s}
+.tab.active{border-color:var(--accent);background:rgba(0,212,255,0.08);box-shadow:var(--glow)}
+.tab-name{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:1px}
+.tab.active .tab-name{color:var(--accent)}
+.tab-price{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;color:var(--text)}
+.tab-chg{font-size:11px;font-weight:600}
+.up{color:var(--call)}.dn{color:var(--put)}
+@media(max-width:700px){.index-tabs{flex-direction:column}.main-grid{grid-template-columns:1fr!important}}
+
+/* ── Cards ── */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.full-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.card-title-left{display:flex;align-items:center;gap:6px}
+
+/* ── Signals ── */
+.signal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sig-box{border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)}
+.sig-label{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase}
+.sig-val{font-size:14px;font-weight:700}
+.sig-bull{background:rgba(0,255,136,0.07);border-color:rgba(0,255,136,0.2)}
+.sig-bear{background:rgba(255,64,96,0.07);border-color:rgba(255,64,96,0.2)}
+.sig-neu{background:rgba(255,184,0,0.07);border-color:rgba(255,184,0,0.2)}
+
+/* ── Form ── */
+.form-row{margin-bottom:11px}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;letter-spacing:.5px}
+select,input[type=number]{width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color .2s}
+select:focus,input:focus{border-color:var(--accent)}
+select option{background:var(--surface2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.pill{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .15s;color:var(--muted)}
+.pill.ac{border-color:var(--call);background:rgba(0,255,136,0.12);color:var(--call)}
+.pill.ap{border-color:var(--put);background:rgba(255,64,96,0.12);color:var(--put)}
+.pill.an{border-color:var(--warn);background:rgba(255,184,0,0.12);color:var(--warn)}
+.calc-btn{width:100%;padding:12px;background:linear-gradient(135deg,#0088ff,#00d4ff);border:none;border-radius:10px;font-family:'Noto Sans Devanagari',sans-serif;font-size:14px;font-weight:700;color:#000;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.calc-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,0.5)}
+
+/* ── Result ── */
+.result-panel{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px;margin-top:12px;display:none}
+.result-panel.show{display:block}
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(26,51,80,0.5)}
+.rrow:last-child{border:none}
+.rlabel{font-size:11px;color:var(--muted)}
+.rval{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600}
+.risk-track{height:7px;background:var(--surface);border-radius:4px;overflow:hidden;border:1px solid var(--border);margin-top:8px}
+.risk-fill{height:100%;border-radius:4px;transition:width .6s}
+
+/* ── Option Chain ── */
+.chain-scroll{max-height:300px;overflow-y:auto}
+.chain-scroll::-webkit-scrollbar{width:3px}
+.chain-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.chain-table{width:100%;border-collapse:collapse;font-size:11px}
+.chain-table th{padding:7px 8px;text-align:center;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;background:var(--bg);position:sticky;top:0;z-index:1}
+.chain-table td{padding:6px 8px;text-align:center;font-family:'JetBrains Mono',monospace;border-bottom:1px solid rgba(26,51,80,0.3);font-size:11px}
+.chain-table tr:hover td{background:rgba(0,212,255,0.05);cursor:pointer}
+.cc{color:var(--call)}.pc{color:var(--put)}.sc{color:var(--warn);font-weight:700;font-size:12px}
+.atm-row td{background:rgba(255,184,0,0.04)}
+.atm-b{background:var(--warn);color:#000;border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700;margin-left:3px}
+.oi-bar{height:4px;border-radius:2px;margin-top:2px}
+
+/* ── P&L ── */
+.pnl-chart{width:100%;height:150px;margin:8px 0}
+canvas{width:100%!important;height:100%!important}
+
+/* ── Levels ── */
+.levels-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+
+/* ── Refresh btn ── */
+.ref-btn{font-size:10px;padding:3px 9px;background:rgba(0,212,255,0.08);border:1px solid var(--accent);border-radius:6px;color:var(--accent);cursor:pointer;transition:all .2s}
+.ref-btn:hover{background:rgba(0,212,255,0.18)}
+.lu{font-size:9px;color:var(--muted)}
+
+footer{text-align:center;padding:14px;color:var(--muted);font-size:10px}
+footer strong{color:var(--warn)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SETUP MODAL ═══════════════ -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal">
+    <h2>🔑 Zerodha Kite API सेटअप</h2>
+    <p class="sub">पूरा process अब इस HTML में ही होगा — कोई Python script नहीं चाहिए। Access Token रोज़ सुबह एक बार generate करना होगा (Kite का नियम, daily expire)।</p>
+
+    <div class="step-box">
+      <h3>📋 Step 1 — API Key & Secret डालें</h3>
+      <p>Zerodha Developer Console (<code>kite.trade/developers</code>) → My Apps से कॉपी करें।</p>
+      <div class="mrow" style="margin-top:8px">
+        <div>
+          <mlabel>API Key</mlabel>
+          <input class="minput" id="m-apikey" type="text" placeholder="xxxxxxxxxxxx" style="margin-bottom:0">
+        </div>
+        <div>
+          <mlabel>API Secret</mlabel>
+          <input class="minput" id="m-secret" type="password" placeholder="••••••••••••" style="margin-bottom:0">
+        </div>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <h3>🌐 Step 2 — Kite से Login करें</h3>
+      <p>नीचे बटन दबाएं → Kite पर login करें → redirect होने पर ब्राउज़र के address bar में <code>request_token=XXXXX</code> दिखेगा। पूरा URL या सिर्फ token copy करें।</p>
+      <a class="gen-token-btn" id="login-link" href="#" target="_blank">🚀 Kite Login Page खोलें</a>
+    </div>
+
+    <div class="step-box">
+      <h3>⚡ Step 3 — Request Token पेस्ट करें</h3>
+      <mlabel>Request Token (या पूरा redirect URL)</mlabel>
+      <input class="minput" id="m-reqtoken" type="text" placeholder="request_token=XXXXX या पूरा URL paste करें" style="margin-bottom:0">
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);margin:10px 0">
+      💾 API Key/Secret/Token सिर्फ आपके browser में (sessionStorage) रहते हैं — कहीं और नहीं जाते।
+    </div>
+    <button class="connect-btn" onclick="connectKite()">✅ Access Token Generate करें और Connect करें</button>
+    <div class="modal-err" id="modal-err">❌ सभी फ़ील्ड भरें!</div>
+    <div id="modal-status" style="font-size:12px;color:var(--accent);margin-top:8px;display:none"></div>
+
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <p style="font-size:11px;color:var(--muted)">या अगर आपके पास पहले से Access Token है:</p>
+      <div class="mrow" style="margin-top:6px">
+        <input class="minput" id="m-token" type="text" placeholder="Access Token (वैकल्पिक)" style="margin-bottom:0;grid-column:span 2">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div class="container">
+
+<header>
+  <div class="logo">
+    <div style="font-size:26px">📊</div>
+    <div>
+      <h1>OPTION TRADER PRO</h1>
+      <span>Zerodha Kite Live — NSE/BSE ऑप्शन</span>
+    </div>
+  </div>
+  <div class="hright">
+    <div class="badge badge-warn" id="conn-badge"><div class="dot dot-y"></div><span id="conn-text">Connecting...</span></div>
+    <button class="settings-btn" onclick="showModal()">⚙️ API Settings</button>
+    <div class="time-display" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- Index Tabs -->
+<div class="index-tabs">
+  <div class="tab active" onclick="selectIndex('NIFTY')" id="tab-NIFTY">
+    <div class="tab-name">NIFTY 50</div>
+    <div class="tab-price" id="price-NIFTY">—</div>
+    <div class="tab-chg" id="chg-NIFTY">—</div>
+  </div>
+  <div class="tab" onclick="selectIndex('SENSEX')" id="tab-SENSEX">
+    <div class="tab-name">SENSEX</div>
+    <div class="tab-price" id="price-SENSEX">—</div>
+    <div class="tab-chg" id="chg-SENSEX">—</div>
+  </div>
+  <div class="tab" onclick="selectIndex('BANKNIFTY')" id="tab-BANKNIFTY">
+    <div class="tab-name">BANK NIFTY</div>
+    <div class="tab-price" id="price-BANKNIFTY">—</div>
+    <div class="tab-chg" id="chg-BANKNIFTY">—</div>
+  </div>
+</div>
+
+<!-- Signals -->
+<div class="full-card">
+  <div class="card-title">
+    <div class="card-title-left"><span>📡</span> लाइव मार्केट — <span id="sig-idx" style="color:var(--accent);font-size:11px">NIFTY</span></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="lu" id="last-upd">—</span>
+      <button class="ref-btn" onclick="fetchAll()">🔄 रिफ्रेश</button>
+    </div>
+  </div>
+  <div class="signal-grid">
+    <div class="sig-box sig-neu"><div class="sig-label">LTP</div><div class="sig-val" id="sig-ltp" style="color:var(--accent)">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">बदलाव</div><div class="sig-val" id="sig-chg">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">% बदलाव</div><div class="sig-val" id="sig-pct">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">High</div><div class="sig-val" id="sig-high" style="color:var(--call)">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">Low</div><div class="sig-val" id="sig-low" style="color:var(--put)">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">Open</div><div class="sig-val" id="sig-open" style="color:var(--warn)">—</div></div>
+  </div>
+</div>
+
+<!-- Main Grid -->
+<div class="main-grid">
+
+  <!-- Trade Setup -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-left"><span>⚙️</span> ट्रेड सेटअप</div></div>
+
+    <div class="form-row">
+      <label>इंडेक्स</label>
+      <select id="sel-idx" onchange="onIdxChange()">
+        <option value="NIFTY">NIFTY 50 (Lot: 25)</option>
+        <option value="SENSEX">SENSEX (Lot: 10)</option>
+        <option value="BANKNIFTY">BANK NIFTY (Lot: 15)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>एक्सपायरी</label>
+      <select id="sel-exp"></select>
+    </div>
+    <div class="form-row">
+      <label>स्ट्राइक</label>
+      <input type="number" id="inp-strike" placeholder="ATM strike">
+    </div>
+    <div class="form-row row2">
+      <div><label>प्रीमियम (₹)</label><input type="number" id="inp-prem" placeholder="85"></div>
+      <div><label>लॉट</label><input type="number" id="inp-lots" value="1" min="1"></div>
+    </div>
+    <div class="form-row">
+      <label>ऑप्शन टाइप</label>
+      <div class="pills">
+        <div class="pill ac" onclick="setType('CE')" id="pCE">📈 CALL (CE)</div>
+        <div class="pill" onclick="setType('PE')" id="pPE">📉 PUT (PE)</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>स्ट्रैटेजी</label>
+      <div class="pills">
+        <div class="pill an" onclick="setStrat('BUY')" id="pBUY">BUY</div>
+        <div class="pill" onclick="setStrat('SELL')" id="pSELL">SELL</div>
+        <div class="pill" onclick="setStrat('SPREAD')" id="pSPREAD">SPREAD</div>
+        <div class="pill" onclick="setStrat('STRADDLE')" id="pSTRADDLE">STRADDLE</div>
+      </div>
+    </div>
+    <div class="form-row row2">
+      <div><label>SL (%)</label><input type="number" id="inp-sl" value="50"></div>
+      <div><label>Target (%)</label><input type="number" id="inp-tgt" value="100"></div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🧮 कैलकुलेट करें</button>
+
+    <div class="result-panel" id="res-panel">
+      <div class="rrow"><span class="rlabel">कुल लागत</span><span class="rval" id="r-cost">—</span></div>
+      <div class="rrow"><span class="rlabel">मार्जिन</span><span class="rval" id="r-margin">—</span></div>
+      <div class="rrow"><span class="rlabel">Max Loss</span><span class="rval dn" id="r-sl">—</span></div>
+      <div class="rrow"><span class="rlabel">Target P&L</span><span class="rval up" id="r-tgt">—</span></div>
+      <div class="rrow"><span class="rlabel">Breakeven</span><span class="rval" id="r-be" style="color:var(--warn)">—</span></div>
+      <div class="rrow"><span class="rlabel">R:R Ratio</span><span class="rval" id="r-rr" style="color:var(--accent)">—</span></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted);display:flex;justify-content:space-between"><span>रिस्क मीटर</span><span id="r-riskl">—</span></div>
+      <div class="risk-track"><div class="risk-fill" id="r-riskf" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Option Chain -->
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span>⛓️</span> ऑप्शन चेन — <span id="chain-idx" style="color:var(--accent)">NIFTY</span></div>
+      <span style="font-size:9px;color:var(--muted)">row = ऑटो-फिल</span>
+    </div>
+    <div class="form-row" style="margin-bottom:8px">
+      <select id="sel-chain-exp" onchange="onChainExpChange()" style="font-size:11px;padding:6px 10px"></select>
+    </div>
+    <div class="chain-scroll">
+      <table class="chain-table">
+        <thead>
+          <tr>
+            <th class="cc">CE Vol</th>
+            <th class="cc">CE OI</th>
+            <th class="cc">CE LTP</th>
+            <th class="sc">STRIKE</th>
+            <th class="pc">PE LTP</th>
+            <th class="pc">PE OI</th>
+            <th class="pc">PE Vol</th>
+          </tr>
+        </thead>
+        <tbody id="chain-body"></tbody>
+      </table>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:6px;text-align:center" id="chain-note">
+      🔑 API connect करने के बाद live option chain आएगा
+    </div>
+  </div>
+</div>
+
+<!-- Futures Panel -->
+<div class="full-card">
+  <div class="card-title">
+    <div class="card-title-left"><span>📦</span> Futures — <span id="fut-idx" style="color:var(--accent)">NIFTY</span> <span id="fut-symbol" style="color:var(--muted);font-size:10px"></span></div>
+  </div>
+  <div class="signal-grid">
+    <div class="sig-box sig-neu"><div class="sig-label">FUT LTP</div><div class="sig-val" id="fut-ltp" style="color:var(--accent)">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">बदलाव</div><div class="sig-val" id="fut-chg">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">% बदलाव</div><div class="sig-val" id="fut-pct">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">OI</div><div class="sig-val" id="fut-oi" style="color:var(--warn)">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">Volume</div><div class="sig-val" id="fut-vol" style="color:var(--warn)">—</div></div>
+    <div class="sig-box sig-neu"><div class="sig-label">Basis (Fut-Spot)</div><div class="sig-val" id="fut-basis">—</div></div>
+  </div>
+</div>
+
+<!-- P&L Chart -->
+<div class="full-card">
+  <div class="card-title"><div class="card-title-left"><span>📈</span> P&L Payoff चार्ट</div></div>
+  <div class="pnl-chart"><canvas id="pnlCanvas"></canvas></div>
+</div>
+
+<!-- Levels -->
+<div class="full-card">
+  <div class="card-title"><div class="card-title-left"><span>🎯</span> Key Levels — <span id="lev-idx" style="color:var(--accent)">NIFTY</span></div></div>
+  <div class="levels-grid" id="lev-grid"></div>
+</div>
+
+</div><!-- /container -->
+
+<footer>⚠️ <strong>Disclaimer:</strong> शैक्षणिक उद्देश्य हेतु। ट्रेडिंग में जोखिम है। SEBI-रजिस्टर्ड सलाहकार से परामर्श लें।<br>API Key / Access Token आपके browser में locally store होता है — कोई server पर नहीं जाता।</footer>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════════
+const LOT  = { NIFTY:25, SENSEX:10, BANKNIFTY:15 };
+const STEP = { NIFTY:50, SENSEX:100, BANKNIFTY:100 };
+
+// Kite instrument tokens for indices (these are fixed NSE tokens)
+const IDX_TOKENS = {
+  NIFTY:     { token:'256265',  sym:'NSE:NIFTY 50',    exchange:'NSE', tradingSymbol:'NIFTY 50' },
+  SENSEX:    { token:'265',     sym:'BSE:SENSEX',       exchange:'BSE', tradingSymbol:'SENSEX' },
+  BANKNIFTY: { token:'260105',  sym:'NSE:NIFTY BANK',  exchange:'NSE', tradingSymbol:'NIFTY BANK' }
+};
+
+// Kite option symbols (NSE F&O)
+const OPT_ROOT = { NIFTY:'NIFTY', SENSEX:'SENSEX', BANKNIFTY:'BANKNIFTY' };
+
+// CORS proxy to bypass browser restrictions on Kite API
+const PROXY = 'https://api.allorigins.win/raw?url=';
+const KITE_BASE = 'https://api.kite.trade';
+
+// NFO underlying name mapping (as used in instruments dump)
+const NFO_NAME = { NIFTY:'NIFTY', SENSEX:'SENSEX', BANKNIFTY:'BANKNIFTY' };
+const NFO_EXCH = { NIFTY:'NFO', SENSEX:'BFO', BANKNIFTY:'NFO' };
+
+// Instruments cache: { NIFTY: { options: [...], futures: [...] }, ... }
+let instrumentsCache = null;
+let instrumentsLoadedAt = 0;
+
+// State
+let apiKey = '', accessToken = '';
+let curIndex = 'NIFTY';
+let curType  = 'CE';
+let curStrat = 'BUY';
+let liveData = { NIFTY:{}, SENSEX:{}, BANKNIFTY:{} };
+let futData  = { NIFTY:{}, SENSEX:{}, BANKNIFTY:{} };
+let chainExpiries = { NIFTY:[], SENSEX:[], BANKNIFTY:[] };
+let connected = false;
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL & CREDENTIALS
+// ══════════════════════════════════════════════════════════════
+function showModal() {
+  document.getElementById('setup-modal').style.display = 'flex';
+  const saved = getSaved();
+  if (saved.apiKey)    document.getElementById('m-apikey').value = saved.apiKey;
+  if (saved.apiSecret) document.getElementById('m-secret').value = saved.apiSecret;
+  if (saved.token)     document.getElementById('m-token').value  = saved.token;
+  updateLoginLink();
+}
+
+document.getElementById('m-apikey').addEventListener('input', updateLoginLink);
+
+function updateLoginLink() {
+  const key = document.getElementById('m-apikey').value.trim();
+  const loginUrl = key
+    ? `https://kite.zerodha.com/connect/login?api_key=${key}&v=3`
+    : 'https://kite.zerodha.com/connect/login?api_key=YOUR_KEY&v=3';
+  document.getElementById('login-link').href = loginUrl;
+}
+
+function getSaved() {
+  try { return JSON.parse(sessionStorage.getItem('kite_creds') || '{}'); } catch(e){ return {}; }
+}
+
+function saveCreds(key, secret, token) {
+  sessionStorage.setItem('kite_creds', JSON.stringify({ apiKey: key, apiSecret: secret, token }));
+}
+
+// SHA256 using Web Crypto API
+async function sha256Hex(message) {
+  const enc = new TextEncoder().encode(message);
+  const hashBuf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Extract request_token from raw input (could be full URL or just token)
+function extractRequestToken(input) {
+  input = input.trim();
+  const match = input.match(/request_token=([^&\s]+)/);
+  if (match) return decodeURIComponent(match[1]);
+  return input; // assume it's already just the token
+}
+
+async function connectKite() {
+  const key    = document.getElementById('m-apikey').value.trim();
+  const secret = document.getElementById('m-secret').value.trim();
+  const reqRaw = document.getElementById('m-reqtoken').value.trim();
+  const directToken = document.getElementById('m-token').value.trim();
+  const errEl    = document.getElementById('modal-err');
+  const statusEl = document.getElementById('modal-status');
+  errEl.style.display = 'none';
+  statusEl.style.display = 'none';
+
+  // Case A: directly provided access token
+  if (directToken && key) {
+    apiKey = key; accessToken = directToken;
+    saveCreds(key, secret, directToken);
+    document.getElementById('setup-modal').style.display = 'none';
+    setBadge('loading', '⏳ Connecting...');
+    fetchAll();
+    return;
+  }
+
+  // Case B: generate access token from request_token + secret
+  if (!key || !secret || !reqRaw) {
+    errEl.textContent = '❌ API Key, API Secret और Request Token भरें (या नीचे सीधा Access Token डालें)!';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const requestToken = extractRequestToken(reqRaw);
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '⏳ Access Token generate हो रहा है...';
+
+  try {
+    const checksum = await sha256Hex(key + requestToken + secret);
+
+    // Debug info
+    const debugHtml = `
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:left;background:var(--bg);padding:8px;border-radius:6px;word-break:break-all">
+        <b>Debug:</b><br>
+        API Key: ${key} (len ${key.length})<br>
+        Request Token (extracted): ${requestToken} (len ${requestToken.length})<br>
+        API Secret length: ${secret.length}<br>
+        Checksum (sha256 of key+token+secret): ${checksum}
+      </div>`;
+
+    const url = `https://api.kite.trade/session/token`;
+    const body = new URLSearchParams({
+      api_key: key,
+      request_token: requestToken,
+      checksum: checksum
+    });
+
+    // Try multiple proxy strategies, since some proxies mangle POST bodies
+    let json = null;
+    const errors = [];
+    const attempts = [
+      { name:'corsproxy.io', url:`https://corsproxy.io/?url=${encodeURIComponent(url)}` },
+      { name:'allorigins',   url: PROXY + encodeURIComponent(url) },
+      { name:'thingproxy',   url: `https://thingproxy.freeboard.io/fetch/${url}` },
+      { name:'codetabs',     url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` },
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const res = await fetch(attempt.url, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/x-www-form-urlencoded', 'X-Kite-Version':'3' },
+          body: body.toString(),
+          signal: AbortSignal.timeout(15000)
+        });
+        const text = await res.text();
+        let parsed;
+        try { parsed = JSON.parse(text); } catch(e) { parsed = { status:'error', message:'Non-JSON ('+res.status+'): '+text.slice(0,150) }; }
+        if (parsed.status !== 'error' && parsed.data?.access_token) { json = parsed; break; }
+        errors.push(`[${attempt.name}] ${parsed.message || JSON.stringify(parsed).slice(0,150)}`);
+      } catch(e) {
+        errors.push(`[${attempt.name}] ${e.message}`);
+      }
+    }
+    const lastErr = errors.join(' | ');
+
+    if (!json || !json.data?.access_token) {
+      statusEl.innerHTML = debugHtml;
+      throw new Error(lastErr || 'Token generation failed (सभी proxies fail)');
+    }
+
+    accessToken = json.data.access_token;
+    apiKey = key;
+    saveCreds(key, secret, accessToken);
+    statusEl.innerHTML = '✅ Access Token मिल गया! Connecting...' + debugHtml;
+    setTimeout(() => {
+      document.getElementById('setup-modal').style.display = 'none';
+      setBadge('loading', '⏳ Connecting...');
+      fetchAll();
+    }, 800);
+
+  } catch (err) {
+    console.error('Token generation error:', err);
+    errEl.textContent = '❌ Token generate नहीं हो पाया: ' + err.message + ' — Request Token नया लें (हर बार सिर्फ एक बार valid रहता है, ~कुछ मिनट में expire)';
+    errEl.style.display = 'block';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  KITE API CALLS (via CORS proxy)
+// ══════════════════════════════════════════════════════════════
+async function kiteGet(path) {
+  const url = KITE_BASE + path;
+  const proxied = PROXY + encodeURIComponent(url);
+  const res = await fetch(proxied, {
+    headers: { 'X-Kite-Version':'3', 'Authorization':`token ${apiKey}:${accessToken}` },
+    signal: AbortSignal.timeout(10000)
+  });
+  const json = await res.json();
+  if (json.status === 'error') throw new Error(json.message || 'Kite API error');
+  return json.data;
+}
+
+// Fetch LTP for multiple instruments
+async function fetchLTP(symbols) {
+  // symbols like ["NSE:NIFTY 50","BSE:SENSEX"]
+  const qs = symbols.map(s=>'i='+encodeURIComponent(s)).join('&');
+  return kiteGet(`/quote/ltp?${qs}`);
+}
+
+// Fetch full quote
+async function fetchQuote(symbol) {
+  return kiteGet(`/quote?i=${encodeURIComponent(symbol)}`);
+}
+
+// Fetch option chain instruments for an expiry
+async function fetchOptionInstruments(underlying, expiry) {
+  // Get instruments list filtered
+  // Note: Kite /instruments is huge; we use /quote for specific strikes
+  return null; // Handled below via buildOptionSymbols
+}
+
+// Build NSE option trading symbols
+// Format: NIFTY24JUN24700CE
+function buildOptSym(root, expiry, strike, type) {
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const yy = String(expiry.getFullYear()).slice(2);
+  const mm = months[expiry.getMonth()];
+  const dd = String(expiry.getDate()).padStart(2,'0');
+  return `NFO:${root}${yy}${mm}${dd}${strike}${type}`;
+}
+
+// ── Simple CSV line parser (handles quoted fields) ──────────────
+function parseCSVLine(line) {
+  const out = []; let cur=''; let inQ=false;
+  for (let i=0;i<line.length;i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === ',' && !inQ) { out.push(cur); cur=''; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+// Fetch & cache NFO/BFO instruments dump, filter for our underlyings
+async function loadInstruments() {
+  const now = Date.now();
+  if (instrumentsCache && (now - instrumentsLoadedAt) < 6*3600*1000) return instrumentsCache;
+
+  const cache = { NIFTY:{options:[],futures:[]}, SENSEX:{options:[],futures:[]}, BANKNIFTY:{options:[],futures:[]} };
+  const exchanges = ['NFO','BFO'];
+
+  for (const exch of exchanges) {
+    const url = `${KITE_BASE}/instruments/${exch}`;
+    const res = await fetch(PROXY + encodeURIComponent(url), {
+      headers: { 'X-Kite-Version':'3', 'Authorization':`token ${apiKey}:${accessToken}` },
+      signal: AbortSignal.timeout(25000)
+    });
+    const text = await res.text();
+    const lines = text.split('\n');
+    const header = parseCSVLine(lines[0]);
+    const idx = {};
+    header.forEach((h,i)=>idx[h.trim()]=i);
+
+    for (let li=1; li<lines.length; li++) {
+      const line = lines[li];
+      if (!line || !line.trim()) continue;
+      const cols = parseCSVLine(line);
+      const name = cols[idx['name']];
+      const segment = cols[idx['segment']];
+      if (!name) continue;
+
+      for (const root of Object.keys(NFO_NAME)) {
+        if (NFO_EXCH[root] !== exch) continue;
+        if (name !== NFO_NAME[root]) continue;
+
+        const instType = cols[idx['instrument_type']]; // CE, PE, FUT
+        const expiry = cols[idx['expiry']];
+        const strike = parseFloat(cols[idx['strike']]);
+        const tradingsymbol = cols[idx['tradingsymbol']];
+        const token = cols[idx['instrument_token']];
+
+        if (instType === 'FUT') {
+          cache[root].futures.push({ tradingsymbol, expiry, token, exch });
+        } else if (instType === 'CE' || instType === 'PE') {
+          cache[root].options.push({ tradingsymbol, expiry, strike, type:instType, token, exch });
+        }
+      }
+    }
+  }
+
+  // Sort futures by expiry, sort option expiries
+  Object.keys(cache).forEach(root => {
+    cache[root].futures.sort((a,b)=> new Date(a.expiry) - new Date(b.expiry));
+    const expirySet = new Set(cache[root].options.map(o=>o.expiry));
+    chainExpiries[root] = Array.from(expirySet).sort((a,b)=> new Date(a)-new Date(b));
+  });
+
+  instrumentsCache = cache;
+  instrumentsLoadedAt = now;
+  return cache;
+}
+
+// Get options for current index + selected expiry, nearest strikes around ATM
+function getChainOptions(root, expiryStr, atm, step, range=5) {
+  if (!instrumentsCache) return [];
+  const all = instrumentsCache[root].options.filter(o=>o.expiry===expiryStr);
+  const strikes = [];
+  for (let i=-range;i<=range;i++) strikes.push(atm + i*step);
+  const result = [];
+  strikes.forEach(s => {
+    const ce = all.find(o=>o.type==='CE' && Math.round(o.strike)===s);
+    const pe = all.find(o=>o.type==='PE' && Math.round(o.strike)===s);
+    result.push({ strike:s, ce, pe });
+  });
+  return result;
+}
+
+// Fetch quotes in batches (Kite limits ~ 500 instruments per call, but proxy URL length matters)
+async function fetchQuotesBatch(symbols) {
+  if (!symbols.length) return {};
+  const out = {};
+  const BATCH = 40; // keep URL length safe through proxy
+  for (let i=0; i<symbols.length; i+=BATCH) {
+    const batch = symbols.slice(i, i+BATCH);
+    const qs = batch.map(s=>'i='+encodeURIComponent(s)).join('&');
+    try {
+      const data = await kiteGet(`/quote?${qs}`);
+      Object.assign(out, data);
+    } catch(e) { console.warn('batch quote fail', e.message); }
+  }
+  return out;
+}
+
+// Fetch nearest future for current index and update futData
+async function fetchFutures(root) {
+  if (!instrumentsCache || !instrumentsCache[root].futures.length) return;
+  const fut = instrumentsCache[root].futures[0]; // nearest expiry
+  const sym = `${fut.exch}:${fut.tradingsymbol}`;
+  try {
+    const data = await kiteGet(`/quote?i=${encodeURIComponent(sym)}`);
+    const q = data[sym];
+    if (q) {
+      futData[root] = {
+        symbol: fut.tradingsymbol,
+        expiry: fut.expiry,
+        ltp: q.last_price,
+        chg: q.net_change,
+        pct: q.net_change/(q.ohlc?.close||q.last_price)*100,
+        oi: q.oi,
+        volume: q.volume,
+        high: q.ohlc?.high, low: q.ohlc?.low, open: q.ohlc?.open,
+        loaded: true
+      };
+    }
+  } catch(e) { console.warn('futures fetch fail', e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH ALL LIVE DATA
+// ══════════════════════════════════════════════════════════════
+async function fetchAll() {
+  if (!apiKey || !accessToken) { showModal(); return; }
+  setBadge('loading', '⏳ लोड हो रहा है...');
+  try {
+    // 1. Fetch index quotes
+    const symbols = Object.values(IDX_TOKENS).map(t => t.sym);
+    const qtData = await fetchLTP(symbols);
+
+    Object.keys(IDX_TOKENS).forEach(idx => {
+      const sym = IDX_TOKENS[idx].sym;
+      const q   = qtData[sym];
+      if (q) {
+        liveData[idx].ltp = q.last_price;
+        liveData[idx].loaded = true;
+      }
+    });
+
+    // 2. Fetch full quote for current index
+    await fetchFullQuote(curIndex);
+
+    // 3. Load NFO/BFO instruments (cached for 6 hrs)
+    setBadge('loading', '⏳ Instruments लोड हो रहे हैं...');
+    await loadInstruments();
+    populateExpiries();
+
+    // 4. Fetch nearest futures for current index
+    await fetchFutures(curIndex);
+
+    connected = true;
+    setBadge('live', '✅ KITE LIVE');
+    document.getElementById('last-upd').textContent =
+      'Updated: ' + new Date().toLocaleTimeString('hi-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    updateAllTabs();
+    updateSignals();
+    updateFutPanel();
+    await buildChain();
+    updateLevels();
+    setATM();
+
+  } catch(err) {
+    console.error('Kite fetch error:', err);
+    setBadge('error', '❌ ' + (err.message.includes('token')||err.message.includes('401') ? 'Token expired — नया Token डालें' : 'Error — रिफ्रेश करें'));
+    if (err.message.includes('401') || err.message.includes('token')) {
+      // Token likely expired, show modal
+      setTimeout(()=>{ alert('⚠️ Access Token expire हो गया। नया token generate करें।'); showModal(); }, 500);
+    }
+    // Fall back to Yahoo Finance
+    fallbackYahoo();
+  }
+}
+
+async function fetchFullQuote(idx) {
+  try {
+    const sym = IDX_TOKENS[idx].sym;
+    const data = await kiteGet(`/quote?i=${encodeURIComponent(sym)}`);
+    const q = data[sym];
+    if (q) {
+      liveData[idx] = {
+        ltp:    q.last_price,
+        chg:    q.net_change,
+        pct:    q.net_change / (q.ohlc?.close || q.last_price) * 100,
+        high:   q.ohlc?.high,
+        low:    q.ohlc?.low,
+        open:   q.ohlc?.open,
+        close:  q.ohlc?.close,
+        high52: q.upper_circuit_limit,
+        low52:  q.lower_circuit_limit,
+        volume: q.volume,
+        loaded: true
+      };
+    }
+  } catch(e) { console.warn('Full quote failed:', e.message); }
+}
+
+// ── Fallback: Yahoo Finance ──────────────────────────────────
+const YF_SYM = { NIFTY:'^NSEI', SENSEX:'^BSESN', BANKNIFTY:'^NSEBANK' };
+async function fallbackYahoo() {
+  setBadge('warn', '⚠️ Yahoo Finance (fallback)');
+  for (const idx of Object.keys(YF_SYM)) {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YF_SYM[idx])}?interval=1d&range=1d`;
+      const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+      const json = await res.json();
+      const meta = json?.chart?.result?.[0]?.meta;
+      if (meta) {
+        const chg = meta.regularMarketPrice - meta.previousClose;
+        liveData[idx] = {
+          ltp:   meta.regularMarketPrice,
+          chg:   chg,
+          pct:   chg / meta.previousClose * 100,
+          high:  meta.regularMarketDayHigh,
+          low:   meta.regularMarketDayLow,
+          open:  meta.regularMarketOpen,
+          close: meta.previousClose,
+          loaded: true
+        };
+      }
+    } catch(e) { console.warn(idx, 'Yahoo failed:', e); }
+  }
+  updateAllTabs();
+  updateSignals();
+  updateFutPanel();
+  buildChain();
+  updateLevels();
+  setATM();
+  document.getElementById('last-upd').textContent = 'Yahoo: ' + new Date().toLocaleTimeString('hi-IN');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UI UPDATES
+// ══════════════════════════════════════════════════════════════
+function setBadge(type, text) {
+  const b = document.getElementById('conn-badge');
+  const t = document.getElementById('conn-text');
+  t.textContent = text;
+  const dotCls = type==='live'?'dot-g':type==='loading'?'dot-y':'dot-r';
+  const badgeCls = type==='live'?'badge-live':type==='loading'?'badge-warn':'badge-err';
+  b.className = 'badge ' + badgeCls;
+  b.querySelector('.dot').className = 'dot ' + dotCls;
+}
+
+function updateAllTabs() {
+  Object.keys(liveData).forEach(idx => {
+    const d = liveData[idx];
+    if (!d.ltp) return;
+    document.getElementById('price-'+idx).textContent =
+      d.ltp.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const chg = d.chg || 0, pct = d.pct || 0;
+    const up = chg >= 0;
+    const el = document.getElementById('chg-'+idx);
+    el.textContent = (up?'▲ +':'▼ ') + Math.abs(chg).toFixed(2) + ' (' + (up?'+':'') + pct.toFixed(2) + '%)';
+    el.className = 'tab-chg ' + (up?'up':'dn');
+  });
+}
+
+function updateSignals() {
+  const d = liveData[curIndex];
+  if (!d || !d.ltp) return;
+  document.getElementById('sig-idx').textContent = curIndex;
+  const fmt = n => n ? n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+  document.getElementById('sig-ltp').textContent  = fmt(d.ltp);
+  const up = (d.chg||0) >= 0;
+  const chgEl = document.getElementById('sig-chg');
+  chgEl.textContent = d.chg != null ? (up?'+':'') + d.chg.toFixed(2) : '—';
+  chgEl.className = 'sig-val ' + (up?'up':'dn');
+  const pctEl = document.getElementById('sig-pct');
+  pctEl.textContent = d.pct != null ? (up?'+':'') + d.pct.toFixed(2) + '%' : '—';
+  pctEl.className = 'sig-val ' + (up?'up':'dn');
+  document.getElementById('sig-high').textContent = fmt(d.high);
+  document.getElementById('sig-low').textContent  = fmt(d.low);
+  document.getElementById('sig-open').textContent = fmt(d.open);
+}
+
+function setATM() {
+  const d = liveData[curIndex];
+  if (d && d.ltp) {
+    const atm = Math.round(d.ltp / STEP[curIndex]) * STEP[curIndex];
+    document.getElementById('inp-strike').value = atm;
+  }
+}
+
+let curChainExpiry = null;
+
+function populateChainExpiries() {
+  const sel = document.getElementById('sel-chain-exp');
+  const list = chainExpiries[curIndex] || [];
+  if (!list.length) { sel.innerHTML = '<option>—</option>'; return; }
+  if (!curChainExpiry || !list.includes(curChainExpiry)) curChainExpiry = list[0];
+  sel.innerHTML = list.map(e=>{
+    const d = new Date(e);
+    const label = d.toLocaleDateString('hi-IN',{day:'2-digit',month:'short',year:'2-digit'});
+    return `<option value="${e}" ${e===curChainExpiry?'selected':''}>${label}</option>`;
+  }).join('');
+}
+
+function onChainExpChange() {
+  curChainExpiry = document.getElementById('sel-chain-exp').value;
+  buildChain();
+}
+
+async function buildChain() {
+  const d = liveData[curIndex];
+  const price = d?.ltp || 0;
+  if (!price) return;
+  const step = STEP[curIndex];
+  const atm = Math.round(price / step) * step;
+  const body = document.getElementById('chain-body');
+  document.getElementById('chain-idx').textContent = curIndex;
+
+  populateChainExpiries();
+
+  if (!connected || !instrumentsCache || !curChainExpiry) {
+    body.innerHTML = '';
+    document.getElementById('chain-note').textContent = '⚠️ API connect करें — live chain के लिए';
+    return;
+  }
+
+  const rows = getChainOptions(curIndex, curChainExpiry, atm, step, 5);
+
+  // Collect symbols to fetch
+  const symbols = [];
+  rows.forEach(r => {
+    if (r.ce) symbols.push(`${r.ce.exch}:${r.ce.tradingsymbol}`);
+    if (r.pe) symbols.push(`${r.pe.exch}:${r.pe.tradingsymbol}`);
+  });
+
+  document.getElementById('chain-note').textContent = '⏳ Option quotes लोड हो रहे हैं...';
+  let quotes = {};
+  try {
+    quotes = await fetchQuotesBatch(symbols);
+  } catch(e) { console.warn('chain quotes fail', e.message); }
+
+  body.innerHTML = '';
+  rows.forEach(r => {
+    const s = r.strike;
+    const isATM = s === atm;
+    const ceQ = r.ce ? quotes[`${r.ce.exch}:${r.ce.tradingsymbol}`] : null;
+    const peQ = r.pe ? quotes[`${r.pe.exch}:${r.pe.tradingsymbol}`] : null;
+
+    const ceLTP = ceQ ? ceQ.last_price.toFixed(1) : '—';
+    const peLTP = peQ ? peQ.last_price.toFixed(1) : '—';
+    const ceOI  = ceQ ? Math.round((ceQ.oi||0)/1000) : 0;
+    const peOI  = peQ ? Math.round((peQ.oi||0)/1000) : 0;
+    const ceVol = ceQ ? Math.round((ceQ.volume||0)/1000) : 0;
+    const peVol = peQ ? Math.round((peQ.volume||0)/1000) : 0;
+
+    const maxOI = Math.max(ceOI, peOI, 1);
+    const cePct = Math.min(100, Math.round(ceOI/maxOI*100));
+    const pePct = Math.min(100, Math.round(peOI/maxOI*100));
+
+    const tr = document.createElement('tr');
+    if (isATM) tr.className = 'atm-row';
+    tr.innerHTML = `
+      <td class="cc">${ceVol}K</td>
+      <td class="cc"><div>${ceOI}K</div><div class="oi-bar" style="background:var(--call);width:${cePct}%;margin:0 auto"></div></td>
+      <td class="cc">${ceLTP}</td>
+      <td class="sc">${s.toLocaleString('en-IN')}${isATM?'<span class="atm-b">ATM</span>':''}</td>
+      <td class="pc">${peLTP}</td>
+      <td class="pc"><div>${peOI}K</div><div class="oi-bar" style="background:var(--put);width:${pePct}%;margin:0 auto"></div></td>
+      <td class="pc">${peVol}K</td>`;
+    tr.onclick = () => {
+      document.getElementById('inp-strike').value = s;
+      const prem = curType==='CE' ? ceLTP : peLTP;
+      if (prem !== '—') document.getElementById('inp-prem').value = prem;
+    };
+    body.appendChild(tr);
+  });
+
+  document.getElementById('chain-note').textContent = '✅ Live Kite option chain (' +
+    new Date(curChainExpiry).toLocaleDateString('hi-IN',{day:'2-digit',month:'short'}) + ' expiry)';
+}
+
+function updateFutPanel() {
+  const f = futData[curIndex];
+  const d = liveData[curIndex];
+  document.getElementById('fut-idx').textContent = curIndex;
+  if (!f || !f.loaded) {
+    document.getElementById('fut-symbol').textContent = '';
+    ['fut-ltp','fut-chg','fut-pct','fut-oi','fut-vol','fut-basis'].forEach(id=>document.getElementById(id).textContent='—');
+    return;
+  }
+  document.getElementById('fut-symbol').textContent = `(${f.symbol})`;
+  document.getElementById('fut-ltp').textContent = f.ltp.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const up = (f.chg||0) >= 0;
+  const chgEl = document.getElementById('fut-chg');
+  chgEl.textContent = (up?'+':'') + (f.chg||0).toFixed(2);
+  chgEl.className = 'sig-val ' + (up?'up':'dn');
+  const pctEl = document.getElementById('fut-pct');
+  pctEl.textContent = (up?'+':'') + (f.pct||0).toFixed(2) + '%';
+  pctEl.className = 'sig-val ' + (up?'up':'dn');
+  document.getElementById('fut-oi').textContent  = f.oi ? (f.oi/100000).toFixed(2)+'L' : '—';
+  document.getElementById('fut-vol').textContent = f.vol||f.volume ? ((f.volume||0)/1000).toFixed(0)+'K' : '—';
+  if (d?.ltp) {
+    const basis = f.ltp - d.ltp;
+    const bEl = document.getElementById('fut-basis');
+    bEl.textContent = (basis>=0?'+':'') + basis.toFixed(2);
+    bEl.className = 'sig-val ' + (basis>=0?'up':'dn');
+  }
+}
+
+function updateLevels() {
+  const d = liveData[curIndex];
+  const price = d?.ltp || 0;
+  if (!price) return;
+  const step = STEP[curIndex];
+  const atm = Math.round(price / step) * step;
+  document.getElementById('lev-idx').textContent = curIndex;
+  const levels = [
+    {label:'Strong Support', val:atm-step*3, color:'var(--call)'},
+    {label:'Support',        val:atm-step,   color:'var(--call)'},
+    {label:'ATM / Current',  val:atm,        color:'var(--warn)'},
+    {label:'Resistance',     val:atm+step,   color:'var(--put)'},
+    {label:'Str. Resistance',val:atm+step*3, color:'var(--put)'},
+    {label:'Weekly Target',  val:atm+step*6, color:'var(--muted)'},
+  ];
+  document.getElementById('lev-grid').innerHTML = levels.map(l=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;border-left:3px solid ${l.color}">
+      <div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase">${l.label}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:${l.color}">${l.val.toLocaleString('en-IN')}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INDEX / TYPE / STRAT SELECTION
+// ══════════════════════════════════════════════════════════════
+function selectIndex(idx) {
+  curIndex = idx;
+  curChainExpiry = null;
+  document.getElementById('sel-idx').value = idx;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+idx).classList.add('active');
+  document.getElementById('sig-idx').textContent = idx;
+  if (apiKey && connected) {
+    fetchFullQuote(idx).then(async ()=>{
+      await fetchFutures(idx);
+      updateSignals(); updateFutPanel(); await buildChain(); updateLevels(); setATM();
+    });
+  } else {
+    updateSignals(); updateFutPanel(); buildChain(); updateLevels(); setATM();
+  }
+}
+function onIdxChange() { selectIndex(document.getElementById('sel-idx').value); }
+
+function setType(t) {
+  curType = t;
+  document.getElementById('pCE').className = 'pill' + (t==='CE'?' ac':'');
+  document.getElementById('pPE').className  = 'pill' + (t==='PE'?' ap':'');
+}
+function setStrat(s) {
+  curStrat = s;
+  ['BUY','SELL','SPREAD','STRADDLE'].forEach(x => {
+    document.getElementById('p'+x).className = 'pill' + (x===s?' an':'');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CALCULATE
+// ══════════════════════════════════════════════════════════════
+function calculate() {
+  const idx = document.getElementById('sel-idx').value;
+  const lot = LOT[idx];
+  const lots = parseInt(document.getElementById('inp-lots').value)||1;
+  const prem = parseFloat(document.getElementById('inp-prem').value);
+  const strike = parseFloat(document.getElementById('inp-strike').value);
+  const slPct  = parseFloat(document.getElementById('inp-sl').value)/100;
+  const tgtPct = parseFloat(document.getElementById('inp-tgt').value)/100;
+  if (!prem||!strike){alert('प्रीमियम और स्ट्राइक भरें!');return;}
+  const qty  = lot*lots;
+  const cost = prem*qty;
+  const margin = curStrat==='SELL' ? cost*10 : cost;
+  const slAmt  = curStrat==='BUY' ? cost*slPct  : cost*tgtPct;
+  const tgtAmt = curStrat==='BUY' ? cost*tgtPct : cost*slPct;
+  const be     = curType==='CE' ? strike+prem : strike-prem;
+  const rr     = (tgtAmt/slAmt).toFixed(2);
+  const riskP  = Math.min(100, slPct*100);
+  document.getElementById('r-cost').textContent   = '₹'+cost.toLocaleString('en-IN');
+  document.getElementById('r-margin').textContent = '₹'+Math.round(margin).toLocaleString('en-IN');
+  document.getElementById('r-sl').textContent     = '₹'+Math.round(slAmt).toLocaleString('en-IN');
+  document.getElementById('r-tgt').textContent    = '₹'+Math.round(tgtAmt).toLocaleString('en-IN');
+  document.getElementById('r-be').textContent     = be.toLocaleString('en-IN');
+  document.getElementById('r-rr').textContent     = rr+':1';
+  document.getElementById('r-riskl').textContent  = riskP.toFixed(0)+'% रिस्क';
+  const fill = document.getElementById('r-riskf');
+  fill.style.width = riskP+'%';
+  fill.style.background = riskP>70?'var(--put)':riskP>40?'var(--warn)':'var(--call)';
+  document.getElementById('res-panel').classList.add('show');
+  drawPnL(prem, strike, qty);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  P&L CHART
+// ══════════════════════════════════════════════════════════════
+function drawPnL(prem, strike, qty) {
+  const canvas = document.getElementById('pnlCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  canvas.width  = (canvas.offsetWidth||600)*dpr;
+  canvas.height = 150*dpr;
+  ctx.scale(dpr,dpr);
+  const W=canvas.offsetWidth||600, H=150;
+  ctx.clearRect(0,0,W,H);
+  const p  = prem||80;
+  const k  = strike||(liveData[curIndex]?.ltp||24000);
+  const spot = liveData[curIndex]?.ltp||k;
+  const rng = spot*0.04, pts=80;
+  const lots = qty||LOT[curIndex];
+  const prices = Array.from({length:pts},(_,i)=>spot-rng+2*rng*i/(pts-1));
+  const pnls = prices.map(sp=>{
+    if(curStrat==='BUY')  return curType==='CE'?(Math.max(0,sp-k)-p)*lots:(Math.max(0,k-sp)-p)*lots;
+    else                   return curType==='CE'?(p-Math.max(0,sp-k))*lots:(p-Math.max(0,k-sp))*lots;
+  });
+  const maxP=Math.max(...pnls),minP=Math.min(...pnls),rng2=maxP-minP||1;
+  const toX=i=>(i/(pts-1))*(W-40)+20;
+  const toY=v=>H-20-((v-minP)/rng2)*(H-40);
+  const zY=toY(0);
+  ctx.strokeStyle='rgba(26,51,80,0.5)';ctx.lineWidth=1;
+  for(let g=0;g<5;g++){const y=20+g*(H-40)/4;ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(W-20,y);ctx.stroke();}
+  ctx.strokeStyle='rgba(255,184,0,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(20,zY);ctx.lineTo(W-20,zY);ctx.stroke();ctx.setLineDash([]);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(0,255,136,0.12)');grad.addColorStop(1,'rgba(255,64,96,0.12)');
+  ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(toX(0),zY);
+  pnls.forEach((v,i)=>ctx.lineTo(toX(i),toY(v)));ctx.lineTo(toX(pts-1),zY);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#00ff88';ctx.lineWidth=2.5;ctx.beginPath();
+  pnls.forEach((v,i)=>{if(v>=0){if(i===0||pnls[i-1]<0)ctx.moveTo(toX(i),toY(v));else ctx.lineTo(toX(i),toY(v));}});ctx.stroke();
+  ctx.strokeStyle='#ff4060';ctx.lineWidth=2.5;ctx.beginPath();
+  pnls.forEach((v,i)=>{if(v<0){if(i===0||pnls[i-1]>=0)ctx.moveTo(toX(i),toY(v));else ctx.lineTo(toX(i),toY(v));}});ctx.stroke();
+  ctx.fillStyle='#5a7a99';ctx.font='10px JetBrains Mono,monospace';
+  ctx.fillText('LOSS',24,H-5);ctx.fillText('PROFIT',W-58,16);
+  ctx.fillStyle='#ffb800';ctx.font='bold 10px JetBrains Mono';
+  ctx.fillText('BE:'+(curType==='CE'?k+p:k-p).toLocaleString('en-IN'),W/2-28,zY-5);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  EXPIRY
+// ══════════════════════════════════════════════════════════════
+function populateExpiries() {
+  const sel = document.getElementById('sel-exp');
+  const today = new Date();
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const expiries = [];
+  for (let w=0; w<5; w++) {
+    const d = new Date(today);
+    const days = (4 - d.getDay() + 7) % 7 || 7;
+    d.setDate(d.getDate() + days + w*7);
+    const label = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear().toString().slice(2)} (${w===0?'इस गुरु':'साप्ताहिक'})`;
+    expiries.push(label);
+  }
+  // Monthly last Thursday
+  const lastThu = new Date(today.getFullYear(), today.getMonth()+1, 0);
+  while(lastThu.getDay()!==4) lastThu.setDate(lastThu.getDate()-1);
+  expiries.push(`${lastThu.getDate()} ${months[lastThu.getMonth()]} ${lastThu.getFullYear().toString().slice(2)} (मासिक)`);
+  sel.innerHTML = expiries.map((e,i)=>`<option value="${i}">${e}</option>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CLOCK & AUTO-REFRESH
+// ══════════════════════════════════════════════════════════════
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+populateExpiries();
+updateClock();
+setInterval(updateClock, 1000);
+
+// Auto-refresh every 60s if connected
+setInterval(()=>{ if(apiKey && accessToken) fetchAll(); }, 60000);
+
+// Check for saved credentials
+const saved = getSaved();
+if (saved.apiKey && saved.token) {
+  apiKey = saved.apiKey;
+  accessToken = saved.token;
+  document.getElementById('setup-modal').style.display = 'none';
+  setBadge('loading', '⏳ Reconnecting...');
+  fetchAll();
+}
+</script>
+</body>
+</html>
